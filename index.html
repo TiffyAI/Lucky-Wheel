@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>TiffyAI Bonus Spin</title>
+  <style>
+    body {
+      background: #000814;
+      color: white;
+      text-align: center;
+      font-family: 'Segoe UI', sans-serif;
+    }
+
+    h1 {
+      color: gold;
+      margin-top: 30px;
+    }
+
+    .wheel-container {
+      margin-top: 40px;
+      position: relative;
+    }
+
+    #wheel {
+      width: 300px;
+      transition: transform 4s ease-out;
+    }
+
+    #spinButton {
+      margin-top: 20px;
+      padding: 14px 28px;
+      font-size: 18px;
+      background: linear-gradient(to right, gold, #ffd700);
+      border: none;
+      border-radius: 8px;
+      color: black;
+      cursor: pointer;
+      font-weight: bold;
+      box-shadow: 0 0 20px gold;
+    }
+
+    #result {
+      margin-top: 30px;
+      font-size: 24px;
+      color: #00ffcc;
+    }
+  </style>
+</head>
+<body>
+  <h1>Spin the TiffyAI Bonus Wheel</h1>
+
+  <div class="wheel-container">
+    <img src="wheel.png" id="wheel" alt="TiffyAI Bonus Wheel">
+    <br>
+    <button id="spinButton" onclick="spinWheel()">SPIN TO WIN</button>
+  </div>
+
+  <div id="result"></div>
+
+  <script>
+    let spinning = false;
+
+    function spinWheel() {
+      if (spinning) return;
+      spinning = true;
+
+      const wheel = document.getElementById("wheel");
+      const result = document.getElementById("result");
+
+      const randomDegree = Math.floor(Math.random() * 360) + 720;
+      wheel.style.transform = `rotate(${randomDegree}deg)`;
+
+      setTimeout(() => {
+        const prize = ["1 TIFFY", "5 TIFFY", "10 TIFFY", "Try Again", "2 TIFFY"];
+        const selected = prize[Math.floor(Math.random() * prize.length)];
+        result.textContent = `You won: ${selected}`;
+
+        // Trigger smart contract function here (e.g. mint reward)
+        // e.g. callClaimFunction(selected);
+
+        spinning = false;
+      }, 4000);
+    }
+  </script>
+</body>
+</html>
