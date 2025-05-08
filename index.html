@@ -82,38 +82,43 @@
   <audio id="spinSound" src="https://cdn.pixabay.com/audio/2022/08/04/audio_72a5754f82.mp3"></audio>
 
   <script>
-    const wheel = document.getElementById("wheel");
-    const popup = document.getElementById("popup");
-    const spinSound = document.getElementById("spinSound");
+  const wheel = document.getElementById("wheel");
+  const popup = document.getElementById("popup");
+  const spinSound = document.getElementById("spinSound");
 
-    const prizes = [
-      "50 TIFFY Bonus!",
-      "Try Again!",
-      "1 Free Claim",
-      "You Won 5 TIFFY!",
-      "TiffyAI Mystery Box!",
-      "Double Mining Speed!"
-    ];
+  const prizes = [
+    "NFT Boost!",
+    "XP Boost!",
+    "You WON 5 TIFFY!",
+    "2 x Mining Rate",
+    "Better Luck Next Time",
+    "2 x Mining Rate"
+    "You Won 1 TIFFY!"
+    "XP Boost" 
+  ];
 
-    document.getElementById("spinButton").addEventListener("click", () => {
-      spinSound.play();
-      popup.style.display = "none";
+  const sliceCount = prizes.length;
+  const sliceAngle = 360 / sliceCount;
 
-      // Spin logic
-      const randomDeg = Math.floor(3600 + Math.random() * 360);
-      wheel.style.transform = `rotate(${randomDeg}deg)`;
+  document.getElementById("spinButton").addEventListener("click", () => {
+    spinSound.play();
+    popup.style.display = "none";
 
-      const prizeIndex = Math.floor(((randomDeg % 360) / 360) * prizes.length);
-      const finalPrize = prizes[prizeIndex];
+    // Random full rotation + extra angle to land on a specific slice
+    const extraDegrees = Math.floor(Math.random() * 360);
+    const totalRotation = 360 * 5 + extraDegrees; // 5 full spins
 
-      setTimeout(() => {
-        popup.textContent = `Congratulations! ${finalPrize}`;
-        popup.style.display = "block";
+    wheel.style.transition = "transform 5s ease-out";
+    wheel.style.transform = `rotate(${totalRotation}deg)`;
 
-        // You can trigger smart contract logic here if needed
-      }, 5000); // matches the transition time
-    });
-  </script>
+    // Determine prize based on where the arrow lands
+    const finalDeg = totalRotation % 360;
+    const indexFromTop = Math.floor((360 - finalDeg + sliceAngle / 2) % 360 / sliceAngle);
+    const finalPrize = prizes[indexFromTop];
 
-</body>
-</html>
+    setTimeout(() => {
+      popup.textContent = `Congratulations! ${finalPrize}`;
+      popup.style.display = "block";
+    }, 5000); // Wait for spin animation
+  });
+</script>
