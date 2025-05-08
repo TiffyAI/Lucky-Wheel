@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>TiffyAI Lucky Wheel</title>
+  <style>
+    body {
+      background: radial-gradient(circle at center, #000, #111);
+      color: gold;
+      font-family: 'Segoe UI', sans-serif;
+      text-align: center;
+      margin: 0;
+      padding: 30px;
+    }
+
+    #wheel-container {
+      position: relative;
+      width: 300px;
+      margin: 40px auto;
+    }
+
+    #wheel {
+      width: 100%;
+      border-radius: 50%;
+      border: 8px solid gold;
+      box-shadow: 0 0 20px gold;
+      transition: transform 5s ease-out;
+    }
+
+    #arrow {
+      position: absolute;
+      top: -20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0; 
+      height: 0; 
+      border-left: 20px solid transparent;
+      border-right: 20px solid transparent;
+      border-bottom: 40px solid red;
+    }
+
+    #spinButton {
+      padding: 14px 28px;
+      font-size: 18px;
+      background: linear-gradient(45deg, gold, #ffeb3b);
+      border: none;
+      border-radius: 10px;
+      color: #000;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 20px;
+      box-shadow: 0 0 15px gold;
+      transition: all 0.3s ease;
+    }
+
+    #popup {
+      margin-top: 30px;
+      font-size: 22px;
+      color: #00ffcc;
+      display: none;
+      animation: fadeIn 1s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Spin the TiffyAI Bonus Wheel!</h1>
+
+  <div id="wheel-container">
+    <div id="arrow"></div>
+    <img id="wheel" src="wheel.png" alt="Lucky Wheel" />
+  </div>
+
+  <button id="spinButton">Spin Now</button>
+  <div id="popup"></div>
+
+  <audio id="spinSound" src="https://cdn.pixabay.com/audio/2022/08/04/audio_72a5754f82.mp3"></audio>
+
+  <script>
+    const wheel = document.getElementById("wheel");
+    const popup = document.getElementById("popup");
+    const spinSound = document.getElementById("spinSound");
+
+    const prizes = [
+      "50 TIFFY Bonus!",
+      "Try Again!",
+      "1 Free Claim",
+      "You Won 5 TIFFY!",
+      "TiffyAI Mystery Box!",
+      "Double Mining Speed!"
+    ];
+
+    document.getElementById("spinButton").addEventListener("click", () => {
+      spinSound.play();
+      popup.style.display = "none";
+
+      // Spin logic
+      const randomDeg = Math.floor(3600 + Math.random() * 360);
+      wheel.style.transform = `rotate(${randomDeg}deg)`;
+
+      const prizeIndex = Math.floor(((randomDeg % 360) / 360) * prizes.length);
+      const finalPrize = prizes[prizeIndex];
+
+      setTimeout(() => {
+        popup.textContent = `Congratulations! ${finalPrize}`;
+        popup.style.display = "block";
+
+        // You can trigger smart contract logic here if needed
+      }, 5000); // matches the transition time
+    });
+  </script>
+
+</body>
+</html>
