@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>TiffyAI Lucky Wheel</title>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <style>
+    body {
+      background: radial-gradient(circle at center, #000, #111);
+      color: gold;
+      font-family: 'Segoe UI', sans-serif;
+      text-align: center;
+      margin: 0;
+      padding: 30px;
+    }
+
+    #wheel-container {
+      position: relative;
+      width: 300px;
+      margin: 40px auto;
+    }
+
+    #wheel {
+      width: 100%;
+      border-radius: 50%;
+      border: 8px solid gold;
+      box-shadow: 0 0 20px gold;
+      transition: transform 5s ease-out;
+    }
+
+    #arrow {
+      position: absolute;
+      top: -20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0; 
+      height: 0; 
+      border-left: 20px solid transparent;
+      border-right: 20px solid transparent;
+      border-bottom: 40px solid red;
+    }
+
+    #spinButton {
+      padding: 14px 28px;
+      font-size: 18px;
+      background: linear-gradient(45deg, gold, #ffeb3b);
+      border: none;
+      border-radius: 10px;
+      color: #000;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 20px;
+      box-shadow: 0 0 15px gold;
+      transition: all 0.3s ease;
+    }
+
+    #popup {
+      margin-top: 30px;
+      font-size: 24px;
+      color: #00ffcc;
+      display: none;
+      animation: pulse 1.5s ease-out;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(0.9); opacity: 0.3; }
+      50% { transform: scale(1.1); opacity: 1; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    #flashText {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 48px;
+      color: #00ffcc;
+      font-weight: bold;
+      text-shadow: 0 0 15px #00ffcc;
+      opacity: 0;
+      animation: floatUp 1.5s ease-out forwards;
+    }
+
+    @keyframes floatUp {
+      0% { transform: translate(-50%, 0); opacity: 1; }
+      100% { transform: translate(-50%, -100px); opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Spin the TiffyAI Bonus Wheel!</h1>
+
+  <div id="wheel-container">
+    <div id="arrow"></div>
+    <img id="wheel" src="wheel.png" alt="Lucky Wheel" />
+  </div>
+
+  <button id="spinButton">Spin Now</button>
+  <div id="popup"></div>
+
+  <audio id="spinSound" src="https://cdn.pixabay.com/audio/2022/08/04/audio_72a5754f82.mp3"></audio>
+  <audio id="winSound" src="https://cdn.pixabay.com/audio/2022/10/27/audio_a44b63ebf0.mp3"></audio>
+
+  <div id="flashText"></div>
+
+  <script>
+    const wheel = document.getElementById("wheel");
+    const popup = document.getElementById("popup");
+    const spinSound = document.getElementById("spinSound");
+    const winSound = document.getElementById("winSound");
+    const flashText = document.getElementById("flashText");
+
+    const prizes = [
+      "NFT Boost!",
+      "XP Boost!",
+      "You WON 5 TIFFY!",
+      "2x Mining Rate",
+      "Better Luck Next Time",
+      "2x Mining Rate",
+      "You Won 1 TIFFY!",
+      "XP Boost!"
+    ];
+
+    const sliceCount = prizes.length;
+    const sliceAngle = 360 / sliceCount;
+    let currentRotation = 0;
+
+    document.getElementById("spinButton").addEventListener("click", () => {
+      spinSound.play();
+      popup.style.display = "none";
+
+      const extraDegrees = Math.floor(Math.random() * 360);
+      const totalRotation = 360 * 5 + extraDegrees;
+
+      currentRotation += totalRotation;
+      wheel.style.transition = "transform 5s ease-out";
+      wheel.style.transform = `rotate(${currentRotation}deg)`;
+
+      const finalDeg = currentRotation % 360;
+      const indexFromTop = Math.floor((360 - finalDeg + sliceAngle / 2) % 360 / sliceAngle);
+      const finalPrize = prizes[indexFromTop];
+
+      setTimeout(() => {
+        // Show prize popup
+        popup.textContent = `Congratulations! ${finalPrize}`;
+        popup.style.display = "block";
+
+        // Play win sound
+        winSound.play();
+
+        // Fire confetti
+        confetti({
+          particleCount: 100,
+          spread: 70,
+          origin: { y: 0.6 }
+        });
+
+        // Flash floating text
+        flashText.textContent = finalPrize;
+        flashText.style.opacity = 1;
+        flashText.style.animation = "floatUp 1.5s ease-out";
+
+        setTimeout(() => flashText.style.opacity = 0, 1500);
+      }, 5000);
+    });
+  </script>
+</body>
+</html>
