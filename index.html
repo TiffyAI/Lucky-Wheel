@@ -16,13 +16,42 @@
       padding: 30px;
       overflow: hidden;
     }
-
+    #unlockOverlay {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.95);
+      z-index: 999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    #unlockOverlay img {
+      max-width: 600px;
+      margin-bottom: 20px;
+    }
+    #unlockOverlay h2 {
+      color: #00ffcc;
+      margin-bottom: 20px;
+      font-size: 32px;
+    }
+    .unlock-btn {
+      padding: 18px 36px;
+      font-size: 20px;
+      margin: 10px;
+      background: linear-gradient(45deg, #00ccff, #00ffcc);
+      border: none;
+      border-radius: 12px;
+      color: black;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 0 15px #00ffcc;
+    }
     #wheel-container {
       position: relative;
       width: 600px;
       margin: 60px auto;
     }
-
     #wheel {
       width: 100%;
       border-radius: 50%;
@@ -30,19 +59,17 @@
       box-shadow: 0 0 40px gold;
       transition: transform 5s ease-out;
     }
-
     #arrow {
       position: absolute;
       top: -40px;
       left: 50%;
       transform: translateX(-50%);
-      width: 0; 
-      height: 0; 
+      width: 0;
+      height: 0;
       border-left: 40px solid transparent;
       border-right: 40px solid transparent;
       border-bottom: 80px solid red;
     }
-
     #spinButton {
       padding: 20px 40px;
       font-size: 24px;
@@ -55,7 +82,6 @@
       margin-top: 40px;
       box-shadow: 0 0 20px gold;
     }
-
     #popup {
       margin-top: 40px;
       font-size: 28px;
@@ -63,7 +89,6 @@
       display: none;
       animation: fadeIn 1s ease-out;
     }
-
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(20px); }
       to { opacity: 1; transform: translateY(0); }
@@ -72,89 +97,127 @@
 </head>
 <body>
 
-  <h1 style="font-size: 36px;">Spin the TiffyAI Bonus Wheel!</h1>
+<div id="unlockOverlay">
+  <h2>Unlock the Lucky Wheel in your DApp Browser</h2>
+  <img src="Unlock.png" alt="Unlock Lucky Wheel" />
+  <button class="unlock-btn" id="unlockClaimBtn">Unlock with CLAIM</button>
+  <button class="unlock-btn" id="unlockPayBtn">Unlock with 0.5 TIFFY</button>
+</div>
 
-  <div id="wheel-container">
-    <div id="arrow"></div>
-    <img id="wheel" src="wheel.png" alt="Lucky Wheel" />
-  </div>
+<h1 style="font-size: 36px;">Spin the TiffyAI Bonus Wheel!</h1>
+<div id="wheel-container">
+  <div id="arrow"></div>
+  <img id="wheel" src="wheel.png" alt="Lucky Wheel" />
+</div>
 
-  <button id="spinButton">Spin Now</button>
-  <div id="popup"></div>
+<button id="spinButton">Spin Now</button>
+<div id="popup"></div>
+<audio id="spinSound" src="https://cdn.pixabay.com/audio/2022/08/04/audio_72a5754f82.mp3"></audio>
 
-  <audio id="spinSound" src="https://cdn.pixabay.com/audio/2022/08/04/audio_72a5754f82.mp3"></audio>
+<script>
+  const contractAddress = "0x6df97Ec32401e23dEDB2E6cAF3035155890DC237";
+  const rewardWallet = "0xed9b43bED20B063ae0966C0AEC446bc755fB84bA";
+  const backendURL = "https://tiffyai-wh-wa.onrender.com/reward"; // Backend API for minting
 
-  <script>
-    const wheel = document.getElementById("wheel");
-    const popup = document.getElementById("popup");
-    const spinSound = document.getElementById("spinSound");
+  const tokenABI = [
+    { "inputs": [], "name": "decimals", "outputs": [{ "type": "uint8" }], "stateMutability": "view", "type": "function" },
+    { "inputs": [{ "name": "", "type": "address" }], "name": "lastClaimed", "outputs": [{ "type": "uint256" }], "stateMutability": "view", "type": "function" },
+    { "inputs": [{ "name": "recipient", "type": "address" }, { "name": "amount", "type": "uint256" }], "name": "transfer", "outputs": [{ "type": "bool" }], "stateMutability": "nonpayable", "type": "function" }
+  ];
 
-    const prizes = [
-      "NFT Boost!",
-      "XP Boost!",
-      "You WON 5 TIFFY!",
-      "2x Mining Rate",
-      "Better Luck Next Time",
-      "2x Mining Rate",
-      "You Won 1 TIFFY!",
-      "XP Boost"
-    ];
-
-    const sliceCount = prizes.length;
-    const sliceAngle = 360 / sliceCount;
-
-    let web3, user;
-
-    async function connectWallet() {
-      if (typeof window.ethereum !== "undefined") {
-        web3 = new Web3(window.ethereum);
-        await window.ethereum.request({ method: "eth_requestAccounts" });
-        const accounts = await web3.eth.getAccounts();
-        user = accounts[0];
-      } else {
-        alert("Please install MetaMask or open in DApp browser.");
+  const providerOptions = {
+    walletconnect: {
+      package: window.WalletConnectProvider.default,
+      options: {
+        rpc: { 97: "https://data-seed-prebsc-1-s1.binance.org:8545/" },
+        chainId: 97
       }
     }
+  };
 
-    document.getElementById("spinButton").addEventListener("click", async () => {
-      await connectWallet();
-      if (!user) return alert("Wallet not connected");
+  const web3Modal = new window.Web3Modal.default({ cacheProvider: false, providerOptions });
+  let web3, user, contract;
 
-      spinSound.play();
-      popup.style.display = "none";
+  async function connect() {
+    const provider = await web3Modal.connect();
+    web3 = new Web3(provider);
+    const accounts = await web3.eth.getAccounts();
+    user = accounts[0];
+    contract = new web3.eth.Contract(tokenABI, contractAddress);
+    return true;
+  }
 
-      const extraDegrees = Math.floor(Math.random() * 360);
-      const totalRotation = 360 * 5 + extraDegrees;
-      wheel.style.transition = "transform 5s ease-out";
-      wheel.style.transform = `rotate(${totalRotation}deg)`;
+  async function unlockByClaim() {
+    await connect();
+    const lastClaimed = await contract.methods.lastClaimed(user).call();
+    const now = Math.floor(Date.now() / 1000);
+    if (now < parseInt(lastClaimed) + 86400) {
+      alert("Already claimed today. Try again later.");
+    } else {
+      localStorage.setItem("unlockedWheel", "yes");
+      document.getElementById("unlockOverlay").style.display = "none";
+    }
+  }
 
-      const finalDeg = totalRotation % 360;
-      const indexFromTop = Math.floor((360 - finalDeg + sliceAngle / 2) % 360 / sliceAngle);
-      const finalPrize = prizes[indexFromTop];
+  async function unlockByPayment() {
+    await connect();
+    const decimals = await contract.methods.decimals().call();
+    const amount = (0.5 * 10 ** decimals).toString();
+    await contract.methods.transfer(rewardWallet, amount).send({ from: user });
+    localStorage.setItem("unlockedWheel", "yes");
+    document.getElementById("unlockOverlay").style.display = "none";
+  }
 
-      setTimeout(async () => {
-        popup.textContent = `Congratulations! ${finalPrize}`;
-        popup.style.display = "block";
+  document.getElementById("unlockClaimBtn").onclick = unlockByClaim;
+  document.getElementById("unlockPayBtn").onclick = unlockByPayment;
 
-        // Reward payout for token wins
-        if (finalPrize.includes("5 TIFFY") || finalPrize.includes("1 TIFFY")) {
-          const rewardAmount = finalPrize.includes("5 TIFFY") ? 5 : 1;
-          try {
-            const res = await fetch("https://tiffyai-wh-wa.onrender.com/reward", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ wallet: user, amount: rewardAmount })
-            });
-            const data = await res.text();
-            console.log("Reward Response:", data);
-          } catch (err) {
-            console.error("Error sending reward:", err);
-            popup.textContent += "\nReward failed. Try again later.";
-          }
-        }
-      }, 5000);
-    });
-  </script>
+  if (localStorage.getItem("unlockedWheel") === "yes") {
+    document.getElementById("unlockOverlay").style.display = "none";
+  }
 
+  // Wheel logic
+  const wheel = document.getElementById("wheel");
+  const popup = document.getElementById("popup");
+  const spinSound = document.getElementById("spinSound");
+
+  const prizes = [
+    "NFT Boost!",
+    "XP Boost!",
+    "You WON 5 TIFFY!",
+    "2x Mining Rate",
+    "Better Luck Next Time",
+    "2x Mining Rate",
+    "You Won 1 TIFFY!",
+    "XP Boost"
+  ];
+
+  const sliceAngle = 360 / prizes.length;
+
+  document.getElementById("spinButton").addEventListener("click", async () => {
+    spinSound.play();
+    popup.style.display = "none";
+
+    const extraDegrees = Math.floor(Math.random() * 360);
+    const totalRotation = 360 * 5 + extraDegrees;
+    wheel.style.transition = "transform 5s ease-out";
+    wheel.style.transform = `rotate(${totalRotation}deg)`;
+
+    const finalDeg = totalRotation % 360;
+    const index = Math.floor((360 - finalDeg + sliceAngle / 2) % 360 / sliceAngle);
+    const result = prizes[index];
+
+    setTimeout(async () => {
+      popup.innerText = `Congratulations! ${result}`;
+      popup.style.display = "block";
+
+      // Backend call if prize involves tokens
+      if (result.includes("5 TIFFY")) {
+        await fetch(`${backendURL}?user=${user}&amount=5`);
+      } else if (result.includes("1 TIFFY")) {
+        await fetch(`${backendURL}?user=${user}&amount=1`);
+      }
+    }, 5000);
+  });
+</script>
 </body>
 </html>
